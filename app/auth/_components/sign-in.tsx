@@ -12,21 +12,25 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useAuth } from '@/hooks/use-auth'
 
 const SignIn = () => {
+	const { setEmail, setStep } = useAuth()
 	const form = useForm<z.infer<typeof emailSchema>>({
 		resolver: zodResolver(emailSchema),
 		defaultValues: { email: '' },
 	})
 
 	function onSubmit(values: z.infer<typeof emailSchema>) {
-		console.log(values)
+		// API call to sent email
+		setStep('verify')
+		setEmail(values.email)
 	}
 
 	return (
 		<div className='w-full'>
 			<p className='text-center text-muted-foreground text-sm'>
-				Telegram is a messaging app with a focus an speed and security, it's
+				Telegram is a messaging app with a focus an speed and security, it`s
 				super-fast, simple and free.
 			</p>
 			<Form {...form}>

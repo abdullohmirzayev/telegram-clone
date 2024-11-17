@@ -1,3 +1,4 @@
+import { ThemeProvider } from '@/components/provider/theme-provider'
 import './globals.css'
 
 import type { Metadata } from 'next'
@@ -24,11 +25,19 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang='en' suppressHydrationWarning>
+			<head />
 			<body
 				className={`${spaceGrotesk.variable} antialiased`}
 				suppressHydrationWarning
 			>
-				{children}
+				<ThemeProvider
+					attribute='class'
+					defaultTheme='system'
+					enableSystem
+					disableTransitionOnChange
+				>
+					{children}
+				</ThemeProvider>
 			</body>
 		</html>
 	)
