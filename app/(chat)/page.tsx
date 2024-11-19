@@ -7,7 +7,7 @@ import AddContact from './_components/add-contact'
 import { useCurrentContact } from '@/hooks/use-current'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
-import { emailSchema } from '@/lib/validation'
+import { emailSchema, messageSchema } from '@/lib/validation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import TopChat from './_components/top-chat'
 import Chat from './_components/chat'
@@ -21,11 +21,21 @@ const HomePage = () => {
 		defaultValues: { email: '' },
 	})
 
+	const MessageForm = useForm<z.infer<typeof messageSchema>>({
+		resolver: zodResolver(messageSchema),
+		defaultValues: { text: '', image: '' },
+	})
+
 	useEffect(() => {
 		router.replace('/')
 	}, [])
 
 	const onCreateContact = (values: z.infer<typeof emailSchema>) => {
+		// API call to create contact
+		console.log(values)
+	}
+
+	const onSentMessage = (values: z.infer<typeof messageSchema>) => {
 		// API call to create contact
 		console.log(values)
 	}
@@ -57,7 +67,7 @@ const HomePage = () => {
 						{/* Top chat */}
 						<TopChat />
 						{/* Chat messages */}
-						<Chat />
+						<Chat messageForm={MessageForm} onSentMessage={onSentMessage} />
 					</div>
 				)}
 			</div>
@@ -70,6 +80,9 @@ const contacts = [
 		email: 'john@gmail.com',
 		_id: '1',
 		avatar: 'https://github.com/shadcn.png',
+		firstName: 'John',
+		lastName: 'Doe',
+		bio: 'Lorem ipsum dolor, sit amet consectetur adipisicing elit. Quis repellat blanditiis hic reiciendis quibusdam voluptatem necessitatibus, minus sint maxime iste impedit cupiditate ab provident doloremque sed dicta, molestias nemo cum.',
 	},
 	{
 		email: 'karim@gmail.com',
