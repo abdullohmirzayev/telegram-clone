@@ -11,7 +11,7 @@ router.group('/auth', route => {
 
 router.group('/user', route => {
 	route.get('/contacts', (req, res) => {
-		res.json({ contacts: {} })
+		res.json({ contacts: [] })
 	})
 })
 
