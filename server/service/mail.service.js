@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt')
 const otpModel = require('../models/otp.model')
 const BaseError = require('../errors/base.error')
 
-class MailService {
+class mailService {
 	constructor() {
 		this.transporter = nodemailer.createTransport({
 			host: process.env.SMTP_HOST,
@@ -53,4 +53,4 @@ class MailService {
 	}
 }
 
-module.exports = new MailService()
+module.exports = new mailService()
