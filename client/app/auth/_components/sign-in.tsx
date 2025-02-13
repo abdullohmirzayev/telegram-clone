@@ -13,6 +13,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/hooks/use-auth'
+import { useMutation } from '@tanstack/react-query'
+import { axiosClient } from '@/http/axios'
+import { IError } from '@/types'
+import { toast } from '@/hooks/use-toast'
 
 const SignIn = () => {
 	const { setEmail, setStep } = useAuth()
@@ -21,10 +25,37 @@ const SignIn = () => {
 		defaultValues: { email: '' },
 	})
 
+	const { mutate, isPending } = useMutation({
+		mutationFn: async (email: string) => {
+			const { data } = await axiosClient.post<{ email: string }>(
+				'/api/auth/login',
+				{ email }
+			)
+			return data
+		},
+
+		onSuccess: res => {
+			setStep('verify')
+			setEmail(res.email)
+			toast({ description: 'Email sent' })
+		},
+
+		onError: (error: IError) => {
+			if (error.response?.data?.message) {
+				return toast({
+					description: error.response.data.message,
+					variant: 'destructive',
+				})
+			}
+			return toast({
+				description: 'Something went wrong',
+				variant: 'destructive',
+			})
+		},
+	})
+
 	function onSubmit(values: z.infer<typeof emailSchema>) {
-		// API call to sent email
-		setStep('verify')
-		setEmail(values.email)
+		mutate(values.email)
 	}
 
 	return (
@@ -43,6 +74,7 @@ const SignIn = () => {
 								<Label>email</Label>
 								<FormControl>
 									<Input
+										disabled={isPending}
 										placeholder='info@telegram.app'
 										className='h-10 bg-secondary'
 										{...field}
@@ -52,7 +84,12 @@ const SignIn = () => {
 							</FormItem>
 						)}
 					/>
-					<Button type='submit' className='w-full' size={'lg'}>
+					<Button
+						type='submit'
+						className='w-full'
+						size={'lg'}
+						disabled={isPending}
+					>
 						Submit
 					</Button>
 				</form>
