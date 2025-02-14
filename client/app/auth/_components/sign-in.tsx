@@ -15,7 +15,6 @@ import { Label } from '@/components/ui/label'
 import { useAuth } from '@/hooks/use-auth'
 import { useMutation } from '@tanstack/react-query'
 import { axiosClient } from '@/http/axios'
-import { IError } from '@/types'
 import { toast } from '@/hooks/use-toast'
 
 const SignIn = () => {
@@ -40,18 +39,6 @@ const SignIn = () => {
 			toast({ description: 'Email sent' })
 		},
 
-		onError: (error: IError) => {
-			if (error.response?.data?.message) {
-				return toast({
-					description: error.response.data.message,
-					variant: 'destructive',
-				})
-			}
-			return toast({
-				description: 'Something went wrong',
-				variant: 'destructive',
-			})
-		},
 	})
 
 	function onSubmit(values: z.infer<typeof emailSchema>) {
