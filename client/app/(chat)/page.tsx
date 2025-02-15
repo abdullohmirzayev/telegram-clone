@@ -1,7 +1,7 @@
 'use client'
 
 import ContactList from './_components/contact-list'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import AddContact from './_components/add-contact'
 import { useCurrentContact } from '@/hooks/use-current'
@@ -11,9 +11,20 @@ import { emailSchema, messageSchema } from '@/lib/validation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import TopChat from './_components/top-chat'
 import Chat from './_components/chat'
+import { useLoading } from '@/hooks/use-loading'
+import { axiosClient } from '@/http/axios'
+import { useSession } from 'next-auth/react'
+import { generateToken } from '@/lib/generate-token'
+import { IError, IUser } from '@/types'
+import { toast } from '@/hooks/use-toast'
+import { Loader2 } from 'lucide-react'
 
 const HomePage = () => {
+	const [contacts, setContacts] = useState<IUser[]>([])
+	const { setCreating, setLoading, isLoading } = useLoading()
+
 	const { currentContact } = useCurrentContact()
+	const { data: session } = useSession()
 	const router = useRouter()
 
 	const contactForm = useForm<z.infer<typeof emailSchema>>({
@@ -21,18 +32,63 @@ const HomePage = () => {
 		defaultValues: { email: '' },
 	})
 
-	const MessageForm = useForm<z.infer<typeof messageSchema>>({
+	const messageForm = useForm<z.infer<typeof messageSchema>>({
 		resolver: zodResolver(messageSchema),
 		defaultValues: { text: '', image: '' },
 	})
+
+	const getContacts = async () => {
+		setLoading(true)
+		const token = await generateToken(session?.currentUser?._id)
+		try {
+			const { data } = await axiosClient.get<{ contacts: IUser[] }>(
+				'api/user/contacts',
+				{ headers: { Authorization: `Bearer ${token}` } }
+			)
+			setContacts(data.contacts)
+		} catch {
+			toast({ description: 'Cannot fetch contacts', variant: 'destructive' })
+		} finally {
+			setLoading(false)
+		}
+	}
 
 	useEffect(() => {
 		router.replace('/')
 	}, [])
 
-	const onCreateContact = (values: z.infer<typeof emailSchema>) => {
-		// API call to create contact
-		console.log(values)
+	useEffect(() => {
+		if (session?.currentUser?._id) {
+			getContacts()
+		}
+	}, [session?.currentUser])
+
+	const onCreateContact = async (values: z.infer<typeof emailSchema>) => {
+		setCreating(true)
+		const token = await generateToken(session?.currentUser?._id)
+		try {
+			const { data } = await axiosClient.post<{ contact: IUser }>(
+				'api/user/contact',
+				values,
+				{ headers: { Authorization: `Bearer ${token}` } }
+			)
+			setContacts(prev => [...prev, data.contact])
+			toast({ description: 'Contact added successfully' })
+			contactForm.reset()
+		} catch (error: any) {
+			if ((error as IError).response?.data?.message) {
+				return toast({
+					description: (error as IError).response.data.message,
+					variant: 'destructive',
+				})
+			}
+			return toast({
+				description: 'Something went wrong',
+				variant: 'destructive',
+			})
+		} finally {
+			setCreating(false)
+		}
 	}
 
 	const onSentMessage = (values: z.infer<typeof messageSchema>) => {
@@ -45,12 +101,14 @@ const HomePage = () => {
 			{/* Sidebar */}
 			<div className='w-80 h-screen  border-r fixed inset-0 z-50'>
 				{/* Loading */}
-				{/* <div className='w-full h-[95vh] flex justify-center items-center'>
-					<Loader2 size={50} className='animate-spin' />
-				</div> */}
+				{isLoading && (
+					<div className='w-full h-[95vh] flex justify-center items-center'>
+						<Loader2 size={50} className='animate-spin' />
+					</div>
+				)}
 
 				{/* contact list */}
-				<ContactList contacts={contacts} />
+				{!isLoading && <ContactList contacts={contacts} />}
 			</div>
 			{/* chat area */}
 			<div className='pl-80 w-full'>
@@ -67,38 +125,12 @@ const HomePage = () => {
 						{/* Top chat */}
 						<TopChat />
 						{/* Chat messages */}
-						<Chat messageForm={MessageForm} onSentMessage={onSentMessage} />
+						<Chat messageForm={messageForm} onSentMessage={onSentMessage} />
 					</div>
 				)}
 			</div>
 		</div>
 	)
 }
-
-const contacts = [
-	{
-		email: 'john@gmail.com',
-		_id: '1',
-		avatar: 'https://github.com/shadcn.png',
-		firstName: 'John',
-		lastName: 'Doe',
-		bio: 'Lorem ipsum dolor, sit amet consectetur adipisicing elit. Quis repellat blanditiis hic reiciendis quibusdam voluptatem necessitatibus, minus sint maxime iste impedit cupiditate ab provident doloremque sed dicta, molestias nemo cum.',
-	},
-	{
-		email: 'karim@gmail.com',
-		_id: '2',
-		avatar: 'https://github.com/shadcn.png',
-	},
-	{
-		email: 'sardor@gmail.com',
-		_id: '3',
-		avatar: 'https://github.com/shadcn.png',
-	},
-	{
-		email: 'josh@gmail.com',
-		_id: '4',
-		avatar: 'https://github.com/shadcn.png',
-	},
-]
 
 export default HomePage

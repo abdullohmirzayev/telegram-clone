@@ -1,7 +1,7 @@
 'use client'
 
 import { IUser } from '@/types'
-import { FC } from 'react'
+import { FC, useState } from 'react'
 import Settings from './settings'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -14,8 +14,14 @@ interface Props {
 }
 
 const ContactList: FC<Props> = ({ contacts }) => {
+	const [query, setquery] = useState('')
+
 	const router = useRouter()
 	const { currentContact, setCurrentContact } = useCurrentContact()
+
+	const filteredContacts = contacts.filter(contact =>
+		contact.email.toLowerCase().includes(query.toLowerCase())
+	)
 
 	const renderContact = (contact: IUser) => {
 		const onChat = () => {
@@ -26,7 +32,10 @@ const ContactList: FC<Props> = ({ contacts }) => {
 
 		return (
 			<div
-				className={cn('flex justify-between items-center cursor-pointer hover:bg-secondary/50 p-2', currentContact?._id === contact._id && 'bg-secondary/50')}
+				className={cn(
+					'flex justify-between items-center cursor-pointer hover:bg-secondary/50 p-2',
+					currentContact?._id === contact._id && 'bg-secondary/50'
+				)}
 				onClick={onChat}
 			>
 				<div className='flex items-center gap-2'>
@@ -67,20 +76,25 @@ const ContactList: FC<Props> = ({ contacts }) => {
 			<div className='flex items-center bg-background ml-2 sticky top-0'>
 				<Settings />
 				<div className='m-2 w-full'>
-					<Input className='bg-secondary' type='text' placeholder='Search...' />
+					<Input
+						className='bg-secondary'
+						value={query}
+						onChange={e => setquery(e.target.value)}
+						type='text'
+						placeholder='Search...'
+					/>
 				</div>
 			</div>
 
-			{/* Contacts */}
-			{contacts.length === 0 && (
+			{filteredContacts.length === 0 ? (
 				<div className='w-full h-[91vh] flex justify-center items-center text-center text-muted-foreground'>
 					<p>Contact list is empty</p>
 				</div>
+			) : (
+				filteredContacts.map(contact => (
+					<div key={contact._id}>{renderContact(contact)}</div>
+				))
 			)}
-
-			{contacts.map(contact => (
-				<div key={contact._id}>{renderContact(contact)}</div>
-			))}
 		</div>
 	)
 }

@@ -8,7 +8,7 @@ import {
 	AccordionItem,
 	AccordionTrigger,
 } from '@/components/ui/accordion'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Avatar, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import {
 	Popover,
@@ -27,6 +27,7 @@ import { Switch } from '@/components/ui/switch'
 import { toast } from '@/hooks/use-toast'
 import { axiosClient } from '@/http/axios'
 import { generateToken } from '@/lib/generate-token'
+import { UploadButton } from '@/lib/uploadthing'
 import { useMutation } from '@tanstack/react-query'
 import {
 	LogIn,
@@ -48,15 +49,11 @@ const Settings = () => {
 	const { data: session, update } = useSession()
 
 	const { mutate, isPending } = useMutation({
-		mutationFn: async (muted?: boolean) => {
+		mutationFn: async (payload?: IPayload) => {
 			const token = await generateToken(session?.currentUser?._id)
-			const { data } = await axiosClient.put(
-				'api/user/profile',
-				{ muted },
-				{
-					headers: { Authorization: `Bearer ${token}` },
-				}
-			)
+			const { data } = await axiosClient.put('api/user/profile', payload, {
+				headers: { Authorization: `Bearer ${token}` },
+			})
 
 			return data
 		},
@@ -95,7 +92,10 @@ const Settings = () => {
 							</div>
 						</div>
 
-						<div className='flex justify-between items-center p-2 hover:bg-secondary cursor-pointer' onClick={() => window.location.reload()}>
+						<div
+							className='flex justify-between items-center p-2 hover:bg-secondary cursor-pointer'
+							onClick={() => window.location.reload()}
+						>
 							<div className='flex items-center gap-1'>
 								<UserPlus size={16} />
 								<span className='text-sm'>Create contact</span>
@@ -110,7 +110,9 @@ const Settings = () => {
 							<Switch
 								checked={!session?.currentUser?.muted}
 								disabled={isPending}
-								onCheckedChange={() => mutate(!session?.currentUser?.muted)}
+								onCheckedChange={() =>
+									mutate({ muted: !session?.currentUser?.muted })
+								}
 							/>
 						</div>
 
@@ -160,14 +162,24 @@ const Settings = () => {
 
 					<div className='mx-auto w-1/2 h-36 relative'>
 						<Avatar className='w-full h-36'>
-							<AvatarFallback className='text-6xl uppercase font-spaceGrotesk'>
-								MA
-							</AvatarFallback>
+							<AvatarImage
+								src={session?.currentUser?.avatar}
+								alt={session?.currentUser?.email} className='object-cover'
+							/>
+							
 						</Avatar>
 
-						<Button size={'icon'} className='absolute right-0 bottom-0'>
-							<Upload size={16} />
-						</Button>
+						<UploadButton
+							endpoint={'imageUploader'}
+							onClientUploadComplete={res => mutate({ avatar: res[0].url })}
+							config={{ appendOnPaste: true, mode: 'auto' }}
+							className='absolute right-0 bottom-0'
+							appearance={{
+								allowedContent: { display: 'none' },
+								button: { width: 40, height: 40, borderRadius: '100%' },
+							}}
+							content={{ button: <Upload /> }}
+						/>
 					</div>
 
 					<Accordion type='single' collapsible className='mt-4'>
@@ -214,3 +226,8 @@ const Settings = () => {
 }
 
 export default Settings
+
+interface IPayload {
+	muted?: boolean
+	avatar?: string
+}

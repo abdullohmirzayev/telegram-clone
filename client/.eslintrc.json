@@ -2,6 +2,7 @@
   "extends": ["next/core-web-vitals", "next/typescript"],
   "rules": {
     "react/no-unescaoed-entities": 0,
-    "react-hooks/exhaustive-deps": "off"
+    "react-hooks/exhaustive-deps": "off",
+    "@typescript-eslint/no-explicit-any": "error"
   }
 }
